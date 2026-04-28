@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            border-left: 4px solid #10b981;
+            background: #ecfdf5;
+        }
+        .error {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+        }
+        .info {
+            border-left: 4px solid #3b82f6;
+            background: #eff6ff;
+        }
+        code {
+            background: #e5e7eb;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 八字API测试工具</h1>
+        
+        <div class="test-section">
+            <h3>📍 当前访问方式</h3>
+            <div class="result info" id="accessInfo"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🌐 测试1: 检查API连通性</h3>
+            <button onclick="testConnectivity()">开始测试</button>
+            <div class="result" id="connectivityResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📤 测试2: 提交任务</h3>
+            <button onclick="testSubmit()">测试提交</button>
+            <div class="result" id="submitResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔄 测试3: 完整流程</h3>
+            <button onclick="testFullFlow()">测试完整流程</button>
+            <div class="result" id="fullFlowResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>💡 解决方案</h3>
+            <div class="result info">
+                <strong>✅ 已配置本地代理服务器</strong><br><br>
+                本系统使用本地代理服务器来解决CORS问题：<br><br>
+                • 前端请求: <code>http://localhost:8000/api/bazi/...</code><br>
+                • 代理转发: <code>https://baziapi.site/api/bazi/...</code><br>
+                • 自动添加CORS响应头，解决跨域限制<br><br>
+                <strong>使用方法：</strong><br>
+                1. 运行 <code>启动.bat</code> 启动代理服务器<br>
+                2. 访问 <code>http://localhost:8000</code><br>
+                3. 所有API请求会自动通过代理转发
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 使用本地代理服务器，避免CORS问题
+        const API_BASE = window.location.origin; // http://localhost:8000
+        
+        // 显示当前访问方式
+        window.onload = function() {
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+            const accessInfo = document.getElementById('accessInfo');
+            
+            let status = '';
+            if (protocol === 'file:') {
+                status = `❌ 当前使用 file:// 协议访问\n这会导致CORS错误！\n\n✅ 请使用 启动.bat 启动本地服务器`;
+            } else if (protocol === 'http:' || protocol === 'https:') {
+                status = `✅ 当前使用 ${protocol}//${host} 访问\n这是正确的访问方式`;
+            }
+            
+            accessInfo.textContent = status;
+            accessInfo.className = protocol === 'file:' ? 'result error' : 'result success';
+        };
+        
+        // 测试1: 连通性
+        async function testConnectivity() {
+            const resultDiv = document.getElementById('connectivityResult');
+            resultDiv.textContent = '⏳ 测试中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    resultDiv.textContent = `✅ API服务器连接成功！\n\n响应: ${data}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = `⚠️ 服务器响应异常\n\nHTTP ${response.status}: ${response.statusText}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ 连接失败\n\n错误: ${error.message}\n\n这通常是CORS问题，请检查访问方式`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试2: 提交任务
+        async function testSubmit() {
+            const resultDiv = document.getElementById('submitResult');
+            resultDiv.textContent = '⏳ 提交测试任务...';
+            resultDiv.className = 'result';
+            
+            const testData = {
+                year: 1990,
+                month: 1,
+                day: 1,
+                hour: 12,
+                minute: 0,
+                gender: 'male'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/bazi/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(testData),
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.textContent = `✅ 任务提交成功！\n\n${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.textContent = `❌ 提交失败\n\nHTTP ${response.status}\n${errorText}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ 请求失败\n\n错误: ${error.message}\n\n${error.stack}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试3: 完整流程
+        async function testFullFlow() {
+            const resultDiv = document.getElementById('fullFlowResult');
+            resultDiv.textContent = '⏳ 开始完整流程测试...\n';
+            resultDiv.className = 'result';
+            
+            const testData = {
+                year: 1990,
+                month: 1,
+                day: 1,
+                hour: 12,
+                minute: 0,
+                gender: 'male'
+            };
+            
+            try {
+                // 步骤1: 提交任务
+                resultDiv.textContent += '\n📤 步骤1: 提交任务...';
+                const submitResponse = await fetch(`${API_BASE}/api/bazi/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(testData),
+                    mode: 'cors'
+                });
+                
+                if (!submitResponse.ok) {
+                    throw new Error(`提交失败: HTTP ${submitResponse.status}`);
+                }
+                
+                const submitData = await submitResponse.json();
+                const taskId = submitData.taskId;
+                resultDiv.textContent += `\n✅ 任务ID: ${taskId}`;
+                
+                // 步骤2: 轮询查询
+                resultDiv.textContent += '\n\n🔄 步骤2: 查询结果（最多10次）...';
+                
+                for (let i = 0; i < 10; i++) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    
+                    const queryResponse = await fetch(`${API_BASE}/api/bazi/result/${taskId}`, {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' },
+                        mode: 'cors'
+                    });
+                    
+                    if (!queryResponse.ok) {
+                        throw new Error(`查询失败: HTTP ${queryResponse.status}`);
+                    }
+                    
+                    const queryData = await queryResponse.json();
+                    resultDiv.textContent += `\n  查询 ${i + 1}/10: ${queryData.status}`;
+                    
+                    if (queryData.status === 'completed') {
+                        resultDiv.textContent += `\n\n✅ 分析完成！\n\n结果预览:\n${queryData.data.substring(0, 200)}...`;
+                        resultDiv.className = 'result success';
+                        return;
+                    } else if (queryData.status === 'failed') {
+                        throw new Error(queryData.error || '分析失败');
+                    }
+                }
+                
+                resultDiv.textContent += '\n\n⚠️ 测试结束（10次查询后仍在处理中）';
+                resultDiv.className = 'result';
+                
+            } catch (error) {
+                resultDiv.textContent += `\n\n❌ 测试失败\n\n错误: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>
