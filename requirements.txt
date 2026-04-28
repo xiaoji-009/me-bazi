@@ -1,2 +1,2 @@
-# Python依赖文件（用于Vercel/Railway等平台部署）
-# 本项目使用Python标准库，无需额外依赖
+# Python依赖文件（用于Vercel部署）
+urllib3>=1.26.0
